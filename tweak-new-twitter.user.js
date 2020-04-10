@@ -164,6 +164,10 @@ function pageIsNot(page) {
   return () => page != currentPage
 }
 
+function pathIsNot(path) {
+  return () => path != currentPath
+}
+
 function s(n) {
   return n == 1 ? '' : 's'
 }
@@ -618,6 +622,26 @@ function onTitleChange(title) {
   if (config.hideSidebarContent && currentPage != MESSAGES) {
     hideSidebarContents(currentPage)
     observeSidebarAppearance(currentPage)
+  }
+
+  // XXX Automatically click the 'View more replies' link to get rid of the "More tweets"
+  // section if the user lands on a tweet with a ?ref_src= URL.
+  if (/\/status\/(\d+)$/.test(currentPath) && location.search.startsWith('?ref_src')) {
+    hideMoreTweetsSection(currentPath)
+  }
+}
+
+async function hideMoreTweetsSection(path) {
+  let id = /\/status\/(\d+)$/.exec(path)[1]
+  // TODO Observe the timeline instead, as this link doesn't get rendered until you scroll down sometimes
+  let $link = await getElement(`a[href="/i/status/${id}"]`, {
+    // name: 'View more replies link',
+    stopIf: pathIsNot(path),
+    // timeout: 12000,
+  })
+  if ($link != null) {
+    log('clicking "View more replies" link', $link)
+    $link.click()
   }
 }
 
